@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BPM Tap Counter</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #121212;
+      color: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 { font-size: 1.5rem; margin-bottom: 1rem; color: #4ade80; }
+    #bpm {
+      font-size: 5rem;
+      font-weight: bold;
+      margin: 0.5rem 0;
+      transition: transform 0.05s ease;
+    }
+    #label { color: #888; font-size: 1rem; margin-bottom: 2rem; }
+    #tapBtn {
+      background: #4ade80;
+      color: #121212;
+      border: none;
+      border-radius: 50%;
+      width: 200px;
+      height: 200px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.05s ease, background 0.2s;
+    }
+    #tapBtn:active { transform: scale(0.95); background: #22c55e; }
+    #resetBtn {
+      margin-top: 1.5rem;
+      background: transparent;
+      color: #888;
+      border: 1px solid #444;
+      padding: 0.6rem 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    #resetBtn:hover { color: #fff; border-color: #fff; }
+  </style>
+</head>
+<body>
+  <h1>🥁 Tap Tempo</h1>
+  <div id="bpm">--</div>
+  <div id="label">BPM</div>
+  <button id="tapBtn">TAP</button>
+  <button id="resetBtn">Reset</button>
+
+  <script>
+    const tapBtn = document.getElementById('tapBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const bpmDisplay = document.getElementById('bpm');
+
+    let taps = [];
+    const MAX_TAPS = 8;      // rolling average window
+    const TIMEOUT = 2000;    // ms of silence before reset
+
+    function registerTap() {
+      const now = performance.now();
+
+      // Reset if user paused too long
+      if (taps.length && now - taps[taps.length - 1] > TIMEOUT) {
+        taps = [];
+      }
+
+      taps.push(now);
+      if (taps.length > MAX_TAPS) taps.shift();
+
+      if (taps.length >= 2) {
+        const intervals = [];
+        for (let i = 1; i < taps.length; i++) {
+          intervals.push(taps[i] - taps[i - 1]);
+        }
+        const avg = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+        const bpm = Math.round(60000 / avg);
+        bpmDisplay.textContent = bpm;
+      } else {
+        bpmDisplay.textContent = '...';
+      }
+    }
+
+    function reset() {
+      taps = [];
+      bpmDisplay.textContent = '--';
+    }
+
+    // Mouse / touch input
+    tapBtn.addEventListener('click', registerTap);
+    resetBtn.addEventListener('click', reset);
+
+    // Spacebar support for desktop
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        registerTap();
+        tapBtn.style.transform = 'scale(0.95)';
+        setTimeout(() => tapBtn.style.transform = '', 50);
+      }
+    });
+  </script>
+</body>
+</html>
